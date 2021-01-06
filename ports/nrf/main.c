@@ -103,6 +103,10 @@ int main(int argc, char **argv) {
 
 
 soft_reset:
+    #if defined(MICROPY_BOARD_EARLY_INIT)
+    MICROPY_BOARD_EARLY_INIT();
+    #endif
+
     #if MICROPY_PY_TIME_TICKS
     rtc1_init_time_ticks();
     #endif

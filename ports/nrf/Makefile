@@ -248,6 +248,7 @@ SRC_C += \
 	drivers/ticker.c \
 	drivers/bluetooth/ble_drv.c \
 	drivers/bluetooth/ble_uart.c \
+	$(wildcard boards/$(BOARD)/*.c) \
 
 ifeq ($(MCU_SUB_VARIANT), nrf52840)
 
