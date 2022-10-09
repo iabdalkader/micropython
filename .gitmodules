@@ -56,3 +56,6 @@
 [submodule "lib/micropython-lib"]
 	path = lib/micropython-lib
 	url = https://github.com/micropython/micropython-lib.git
+[submodule "lib/edgelock/nano-package"]
+	path = lib/edgelock/nano-package
+	url = https://github.com/NXPPlugNTrust/nano-package.git
