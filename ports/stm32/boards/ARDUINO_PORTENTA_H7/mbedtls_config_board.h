@@ -5,4 +5,12 @@
 
 #include "ports/stm32/mbedtls/mbedtls_config.h"
 
+#if MICROPY_HW_ENABLE_SE05X
+#undef MBEDTLS_SHA512_C
+#define MBEDTLS_ECDSA_SIGN_ALT
+// Only available in the NXP mini package.
+//#define MBEDTLS_ECDSA_VERIFY_ALT
+#define MBEDTLS_KEY_EXCHANGE_ECDHE_ECDSA_ENABLED
+#endif
+
 #endif /* MICROPY_INCLUDED_MBEDTLS_CONFIG_BOARD_H */

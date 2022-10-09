@@ -178,3 +178,17 @@ void PORTENTA_board_low_power(int mode) {
     }
     #endif
 }
+
+#if defined(MICROPY_HW_ENABLE_SE05X)
+#include "modmachine.h"
+#include "extmod/machine_i2c.h"
+
+mp_obj_t edgelock_i2c_instance(void) {
+    mp_obj_t args[] = {
+        MP_OBJ_NEW_SMALL_INT(1),      // TODO hardcoded
+        MP_OBJ_NEW_QSTR(MP_QSTR_freq),
+        MP_OBJ_NEW_SMALL_INT(100000), //TODO hardcoded.
+    };
+    return MP_OBJ_TYPE_GET_SLOT(&machine_i2c_type, make_new)((mp_obj_t)&machine_i2c_type, 1, 1, args);
+}
+#endif
