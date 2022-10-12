@@ -13,6 +13,7 @@ SRC_EXTMOD_C += \
 	extmod/machine_timer.c \
 	extmod/modbluetooth.c \
 	extmod/modbtree.c \
+	extmod/modcryptoki.c \
 	extmod/modframebuf.c \
 	extmod/modlwip.c \
 	extmod/modnetwork.c \
@@ -352,4 +353,44 @@ ifeq ($(MICROPY_BLUETOOTH_BTSTACK),1)
 include $(TOP)/extmod/btstack/btstack.mk
 endif
 
+endif
+
+################################################################################
+# cryptoki
+ifeq ($(MICROPY_PY_CRYPTOKI),1)
+ifeq ($(MICROPY_HW_ENABLE_SE05X),1)
+EDGELOCK_DIR = lib/edgelock
+GIT_SUBMODULES += $(EDGELOCK_DIR)/nano-package
+CFLAGS_EXTMOD += -DMICROPY_PY_CRYPTOKI -DMICROPY_HW_ENABLE_SE05X
+CFLAGS_THIRDPARTY += -DT1oI2C -DT1oI2C_UM11225 #-DSMLOG_DEBUG_MESSAGES #-DWITH_PLATFORM_SCP03
+
+INC += -I$(TOP)/$(EDGELOCK_DIR)/port
+INC += -I$(TOP)/$(EDGELOCK_DIR)/port/compat
+INC += -I$(TOP)/$(EDGELOCK_DIR)/nano-package/lib/apdu
+INC += -I$(TOP)/$(EDGELOCK_DIR)/nano-package/lib/t1oi2c
+INC += -I$(TOP)/$(EDGELOCK_DIR)/nano-package/lib/mbedtls_alt
+
+SRC_THIRDPARTY_C += $(addprefix $(EDGELOCK_DIR)/,\
+	$(addprefix port/, \
+		sm_port.c \
+		) \
+	$(addprefix nano-package/lib/apdu/, \
+		smCom.c\
+		se05x_tlv.c \
+		se05x_APDU_impl.c \
+		) \
+	$(addprefix nano-package/lib/t1oi2c/, \
+		phNxpEse_Api.c \
+		phNxpEsePal_i2c.c \
+		phNxpEseProto7816_3.c \
+		) \
+	$(addprefix nano-package/lib/mbedtls_alt/, \
+		ecdsa_o.c \
+		ecdsa_se05x.c \
+		se05x_mbedtls.c \
+		) \
+	)
+
+$(BUILD)/$(EDGELOCK_DIR)/%.o: CFLAGS += -Wno-unused-but-set-variable -Wno-format
+endif
 endif
