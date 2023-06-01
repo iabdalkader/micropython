@@ -337,6 +337,7 @@ HAL_SRC_C += $(addprefix $(HAL_DIR)/ra/fsp/src/bsp/mcu/all/,\
 
 HAL_SRC_C += $(addprefix $(HAL_DIR)/ra/fsp/src/,\
 	r_ioport/r_ioport.c \
+	r_sci_uart/r_sci_uart.c \
 	)
 
 ifeq ($(USE_FSP_QSPI), 1)
