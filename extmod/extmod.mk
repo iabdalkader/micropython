@@ -38,6 +38,7 @@ SRC_EXTMOD_C += \
 	extmod/moduzlib.c \
 	extmod/modwebrepl.c \
 	extmod/network_cyw43.c \
+	extmod/network_esp_hosted.c \
 	extmod/network_lwip.c \
 	extmod/network_ninaw10.c \
 	extmod/network_wiznet5k.c \
