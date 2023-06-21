@@ -33,7 +33,7 @@
 #define ESP_FRAME_MAX_PAYLOAD       (ESP_FRAME_MAX_SIZE - sizeof(esp_header_t))
 #define ESP_FRAME_FLAGS_FRAGMENT    (1)
 
-#define ESP_RESP_TIMEOUT            (5000)
+#define ESP_SYNC_REQ_TIMEOUT        (5000)
 #define ESP_STATE_BUF_SIZE          (ESP_FRAME_MAX_SIZE * 2)
 #define ESP_STACK_CAPACITY          (32)
 
@@ -43,12 +43,11 @@
 #define TLV_HEADER_EP_EVENT         "ctrlEvnt"
 
 typedef enum {
-    ESP_HOSTED_STATE_RESET = 0,
-    ESP_HOSTED_STATE_LL_INIT,
-    ESP_HOSTED_STATE_INIT,
-    ESP_HOSTED_STATE_CONNECTED,
-    ESP_HOSTED_STATE_DISCONNECTED,
-    ESP_HOSTED_STATE_AP_STARTED,
+    ESP_HOSTED_STATE_RESET     = (0 << 0),
+    ESP_HOSTED_STATE_INIT      = (1 << 0),
+    ESP_HOSTED_STATE_ACTIVE    = (1 << 1),
+    ESP_HOSTED_STATE_CONNECTED = (1 << 2),
+    ESP_HOSTED_STATE_AP_STARTED= (1 << 3),
 } esp_hosted_state_id_t;
 
 typedef enum {
@@ -70,6 +69,7 @@ typedef struct esp_hosted_state {
     uint8_t spi_clk;
     uint8_t chip_flags;
     uint8_t state;
+    uint8_t static_ip;
     uint16_t seq_num;
     uint32_t last_hb_ms;
     struct netif netif[2];
