@@ -71,7 +71,9 @@ INC += -I$(TOP)/$(HAL_DIR)/ra/fsp/src/bsp/cmsis/Device/RENESAS/Include
 INC += -I$(TOP)/lib/tinyusb/hw
 INC += -I$(TOP)/lib/tinyusb/src
 INC += -I${TOP}/shared/tinyusb
-#INC += -Ilwip_inc
+ifeq ($(MICROPY_PY_LWIP),1)
+INC += -Ilwip_inc
+endif
 ifeq ($(CMSIS_MCU),$(filter $(CMSIS_MCU),RA4M1 RA4W1 RA6M1 RA6M2 RA6M5))
 INC += -Ira
 endif
@@ -349,6 +351,10 @@ ifeq ($(MICROPY_BLUETOOTH_NIMBLE),1)
 SRC_C += mpnimbleport.c
 endif
 
+ifeq ($(MICROPY_PY_LWIP),1)
+SRC_C += mpnetworkport.c
+endif
+
 SRC_O += \
 	$(STARTUP_FILE) \
 	$(SYSTEM_FILE)
@@ -374,6 +380,9 @@ HAL_SRC_C += $(addprefix $(HAL_DIR)/ra/fsp/src/,\
 	r_ioport/r_ioport.c \
 	r_sci_uart/r_sci_uart.c \
 	)
+
+CFLAGS_FSP = -DSCI_UART_CFG_TX_ENABLE=0 -DSCI_UART_CFG_RX_ENABLE=0 -Wno-unused-variable -Wno-unused-function
+$(BUILD)/lib/fsp/ra/fsp/src/r_sci_uart/r_sci_uart.o: CFLAGS += $(CFLAGS_FSP)
 
 ifeq ($(USE_FSP_QSPI), 1)
 CFLAGS += -DUSE_FSP_QSPI
