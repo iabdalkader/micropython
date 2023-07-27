@@ -41,6 +41,10 @@
 #include "esp_hosted_hal.h"
 #include "esp_hosted_wifi.h"
 
+#ifndef MICROPY_HW_WIFI_IRQ
+#define MICROPY_HW_WIFI_IRQ MICROPY_HW_WIFI_HANDSHAKE
+#endif
+
 STATIC mp_obj_t esp_hosted_pin_irq_callback(mp_obj_t self_in) {
     extern void mod_network_poll_events(void);
     mod_network_poll_events();
@@ -61,16 +65,22 @@ MP_WEAK int esp_hosted_hal_init(uint32_t mode) {
     mp_hal_pin_input(MICROPY_HW_WIFI_DATAREADY);
 
     // Enable Pin-IRQ for the handshake PIN to call esp_hosted_wifi_poll()
-    mp_obj_t pin_args[] = {
-        NULL, // Method pointer
-        (mp_obj_t)MICROPY_HW_WIFI_HANDSHAKE,   // Pin object
-        (mp_obj_t)&esp_hosted_pin_irq_callback_obj,   // Callback function object
-        MP_OBJ_NEW_SMALL_INT(1),  // Rising edge
-        MP_OBJ_NEW_SMALL_INT(1),  // Hard IRQ, since the actual polling is scheduled.
-    };
-    mp_load_method_maybe((mp_obj_t)MICROPY_HW_WIFI_HANDSHAKE, MP_QSTR_irq, pin_args);
-    if (pin_args[0] && pin_args[1]) {
-        mp_call_method_n_kw(3, 0, pin_args);
+    mp_obj_t irq_rising_attr[2];
+    mp_load_method_maybe((mp_obj_t)MICROPY_HW_WIFI_IRQ, MP_QSTR_IRQ_RISING, irq_rising_attr);
+
+    if (irq_rising_attr[0] != MP_OBJ_NULL && irq_rising_attr[1] == MP_OBJ_NULL) {  // value for IRQ rising found
+        mp_obj_t pin_args[] = {
+            NULL, // Method pointer
+            (mp_obj_t)MICROPY_HW_WIFI_IRQ,   // Pin object
+            (mp_obj_t)&esp_hosted_pin_irq_callback_obj,   // Callback function object
+            NULL,  // The Rising edge value is set below.
+            mp_const_true,  // Hard IRQ, since the actual polling is scheduled.
+        };
+        pin_args[3] = irq_rising_attr[0];
+        mp_load_method_maybe((mp_obj_t)MICROPY_HW_WIFI_IRQ, MP_QSTR_irq, pin_args);
+        if (pin_args[0] != MP_OBJ_NULL && pin_args[1] != MP_OBJ_NULL) {
+            mp_call_method_n_kw(3, 0, pin_args);
+        }
     }
 
     // Initialize SPI.
@@ -94,10 +104,10 @@ MP_WEAK int esp_hosted_hal_deinit(void) {
     // Disable Pin-IRQ for the handshake PIN
     mp_obj_t pin_args[] = {
         NULL, // Method pointer
-        (mp_obj_t)MICROPY_HW_WIFI_HANDSHAKE,   // Pin object
+        (mp_obj_t)MICROPY_HW_WIFI_IRQ,   // Pin object
         mp_const_none  // Set to None
     };
-    mp_load_method_maybe((mp_obj_t)MICROPY_HW_WIFI_HANDSHAKE, MP_QSTR_irq, pin_args);
+    mp_load_method_maybe((mp_obj_t)MICROPY_HW_WIFI_IRQ, MP_QSTR_irq, pin_args);
     if (pin_args[0] && pin_args[1]) {
         mp_call_method_n_kw(1, 0, pin_args);
     }
