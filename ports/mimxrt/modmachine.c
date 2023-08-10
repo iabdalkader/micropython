@@ -37,6 +37,8 @@
 #include "led.h"
 #include "pin.h"
 #include "modmachine.h"
+#include "fsl_gpc.h"
+#include "fsl_src.h"
 #include "fsl_wdog.h"
 #if FSL_FEATURE_BOOT_ROM_HAS_ROMAPI
 #include "fsl_romapi.h"
@@ -53,6 +55,8 @@ typedef enum {
     MP_DEEPSLEEP_RESET,
     MP_SOFT_RESET
 } reset_reason_t;
+
+extern void machine_rtc_alarm_helper(int seconds, bool repeat);
 
 STATIC mp_obj_t machine_unique_id(void) {
     unsigned char id[8];
@@ -74,6 +78,9 @@ STATIC mp_obj_t machine_reset(void) {
 MP_DEFINE_CONST_FUN_OBJ_0(machine_reset_obj, machine_reset);
 
 STATIC mp_obj_t machine_reset_cause(void) {
+    if (SRC->SRSR & kSRC_IppUserResetFlag) {
+        return MP_OBJ_NEW_SMALL_INT(MP_DEEPSLEEP_RESET);
+    }
     uint16_t reset_cause =
         WDOG_GetStatusFlags(WDOG1) & (kWDOG_PowerOnResetFlag | kWDOG_TimeoutResetFlag | kWDOG_SoftwareResetFlag);
     if (reset_cause == kWDOG_PowerOnResetFlag) {
@@ -97,6 +104,28 @@ STATIC mp_obj_t machine_idle(void) {
     return mp_const_none;
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_0(machine_idle_obj, machine_idle);
+
+STATIC mp_obj_t machine_deepsleep(size_t n_args, const mp_obj_t *args) {
+    if (n_args != 0) {
+        mp_int_t seconds = mp_obj_get_int(args[0]) / 1000;
+        if (seconds > 0) {
+            machine_rtc_alarm_helper(seconds, false);
+            GPC_EnableIRQ(GPC, SNVS_HP_WRAPPER_IRQn);
+        }
+    }
+
+    machine_pin_config(&pin_WAKEUP, PIN_MODE_IT_RISING, PIN_PULL_DISABLED, PIN_DRIVE_OFF, 0, PIN_AF_MODE_ALT5);
+    GPC_EnableIRQ(GPC, GPIO5_Combined_0_15_IRQn);
+
+    SNVS->LPCR |= SNVS_LPCR_TOP_MASK;
+
+    while (true) {
+        ;
+    }
+
+    return mp_const_none;
+}
+MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(machine_deepsleep_obj, 0, 1, machine_deepsleep);
 
 STATIC mp_obj_t machine_disable_irq(void) {
     uint32_t state = MICROPY_BEGIN_ATOMIC_SECTION();
@@ -162,6 +191,7 @@ STATIC const mp_rom_map_elem_t machine_module_globals_table[] = {
     { MP_ROM_QSTR(MP_QSTR_WDT),                 MP_ROM_PTR(&machine_wdt_type) },
 
     { MP_ROM_QSTR(MP_QSTR_idle),                MP_ROM_PTR(&machine_idle_obj) },
+    { MP_ROM_QSTR(MP_QSTR_deepsleep),           MP_ROM_PTR(&machine_deepsleep_obj) },
 
     { MP_ROM_QSTR(MP_QSTR_disable_irq),         MP_ROM_PTR(&machine_disable_irq_obj) },
     { MP_ROM_QSTR(MP_QSTR_enable_irq),          MP_ROM_PTR(&machine_enable_irq_obj) },
